@@ -1,0 +1,6 @@
+product_id,sku,brand,model_name,size_spec,category,cost_price,retail_price
+1001,MCH-4521,Michelin,Defender 2,225/65R17,All-Season,110.00,165.99
+1002,BRD-8820,Bridgestone,Turanza QuietTrack,205/55R16,Touring,95.00,149.50
+1003,GDY-3310,Goodyear,Wrangler UltraTerrain,275/60R20,All-Terrain,160.00,230.00
+1004,CNT-1102,Continental,ExtremeContact DWS06,245/40R18,Ultra-High Performance,130.00,195.00
+1005,PRL-9041,Pirelli,Scorpion Verde,235/60R18,SUV/Crossover,120.00,175.50

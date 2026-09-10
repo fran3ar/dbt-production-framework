@@ -1,0 +1,85 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  dbt-build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dbt
+          POSTGRES_PASSWORD: dbt
+          POSTGRES_DB: warehouse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: dbt
+      DB_PASSWORD: dbt
+      DB_NAME: warehouse
+      DB_SCHEMA: analytics
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: dbt seed
+        working-directory: dbt_project
+        run: dbt seed --profiles-dir .
+
+      - name: dbt run
+        working-directory: dbt_project
+        run: dbt run --profiles-dir .
+
+      - name: dbt test
+        working-directory: dbt_project
+        run: dbt test --profiles-dir .
+
+  deploy:
+    needs: dbt-build-test
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # Builds and runs on EC2_HOST itself (not the GitHub runner) so the
+      # `dbt run`/`docs generate` build step reaches the private DB_HOST
+      # over the network path/security group EC2_HOST already has.
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/dbt-production-framework
+            git pull
+            cat > .env <<EOF
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_SCHEMA=${{ secrets.DB_SCHEMA }}
+            DOCS_PORT=8082
+            EOF
+            chmod 600 .env
+            docker compose up -d --build

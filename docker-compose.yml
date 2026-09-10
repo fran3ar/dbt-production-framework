@@ -1,0 +1,30 @@
+services:
+  dbt-docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DB_HOST: ${DB_HOST:-127.0.0.1}
+        DB_PORT: ${DB_PORT:-5432}
+        DB_NAME: ${DB_NAME:-warehouse}
+        DB_SCHEMA: ${DB_SCHEMA:-analytics}
+      secrets:
+        - db_user
+        - db_password
+    image: dbt-production-framework-docs:latest
+    container_name: dbt_production_framework_docs
+    ports:
+      - "${DOCS_PORT:-8082}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+secrets:
+  db_user:
+    environment: DB_USER
+  db_password:
+    environment: DB_PASSWORD

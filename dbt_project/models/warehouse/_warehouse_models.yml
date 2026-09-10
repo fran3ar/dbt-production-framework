@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: d_tire_product
+    description: "Dimension table holding enriched tire catalog specs and baseline margin targets."
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+  - name: f_sales_orders
+    description: "Core sales fact table enriched with margin calculations."
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+      - name: realized_gross_margin
+        description: "Calculated profit margin after baseline manufacturer costs."

@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_products
+    description: "Standardized tire product catalog."
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+  - name: stg_orders
+    description: "Sanitized transaction entries from order systems."
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
